@@ -10,7 +10,7 @@ import React, { useEffect, useState } from "react";
 import { reducerCases } from "@/context/constants";
 
 function onboarding() {
-  const [{}, dipatch] = useStateProvider();
+  const [{}, dispatch] = useStateProvider();
 
   const [{ userInfo, newUser }] = useStateProvider();
   const [name, setName] = useState(userInfo?.name || "");
@@ -38,11 +38,11 @@ function onboarding() {
           image,
         });
         if (data.status) {
-          dipatch({ type: reducerCases.SET_NEW_USER, newUser: false });
-          dipatch({
+          dispatch({ type: reducerCases.SET_NEW_USER, newUser: false });
+          dispatch({
             type: reducerCases.SET_USER_INFO,
             userInfo: {
-              id: data.id,
+              id: data.user.id,
               name,
               email,
               profileImage: image,

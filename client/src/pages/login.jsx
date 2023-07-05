@@ -12,7 +12,7 @@ import { FcGoogle } from "react-icons/fc";
 function login() {
   const router = useRouter();
 
-  const [{ userInfo, newUser }, dipatch] = useStateProvider();
+  const [{ userInfo, newUser }, dispatch] = useStateProvider();
 
   useEffect(() => {
     if (userInfo?.id && !newUser) {
@@ -31,8 +31,8 @@ function login() {
         const { data } = await axios.post(CHECK_USER_ROUTE, { email });
 
         if (!data.status) {
-          dipatch({ type: reducerCases.SET_NEW_USER, newUser: true });
-          dipatch({
+          dispatch({ type: reducerCases.SET_NEW_USER, newUser: true });
+          dispatch({
             type: reducerCases.SET_USER_INFO,
             userInfo: {
               name,
@@ -49,8 +49,8 @@ function login() {
             name,
             profilepicture: profileImage,
             status,
-          } = data;
-          dipatch({
+          } = data.data;
+          dispatch({
             type: reducerCases.SET_USER_INFO,
             userInfo: { id, email, name, profileImage, status },
           });
