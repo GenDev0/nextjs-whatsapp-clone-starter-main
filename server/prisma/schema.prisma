@@ -11,9 +11,24 @@ datasource db {
 }
 
 model User {
-  id             Int     @id @default(autoincrement())
-  email          String? @unique
-  name           String
-  profilePicture String  @default("")
-  about          String  @default("")
+  id               Int        @id @default(autoincrement())
+  email            String?    @unique
+  name             String
+  profilePicture   String     @default("")
+  about            String     @default("")
+  sentMessages     Messages[] @relation("sentMessages")
+  receivedMessages Messages[] @relation("receivedMessages")
+}
+
+model Messages {
+  id            Int      @id @default(autoincrement())
+  senderId      Int // user who sent message
+  sender        User     @relation("sentMessages", fields: [senderId], references: [id])
+  receiverId    Int //user to whom message was send
+  receiver      User     @relation("receivedMessages", fields: [receiverId], references: [id])
+  type          String   @default("text")
+  message       String
+  messageStatus String   @default("sent")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
