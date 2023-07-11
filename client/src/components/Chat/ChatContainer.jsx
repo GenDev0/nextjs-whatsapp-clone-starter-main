@@ -2,6 +2,8 @@ import React from "react";
 import { useStateProvider } from "@/context/StateContext";
 import { calculateTime } from "@/utils/CalculateTime";
 import MessageStatus from "../common/MessageStatus";
+import Image from "next/image";
+import ImageMessage from "./ImageMessage";
 
 function ChatContainer() {
   const [{ messages, currentChatUser, userInfo }] = useStateProvider();
@@ -26,7 +28,7 @@ function ChatContainer() {
                 {message.type === "text" && (
                   <div
                     className={`text-white px-2 py-[5px] text-sm rounded-md flex gap-2 items-end max-w-[60%] md:max-w-[45%] ${
-                      message.senderId !== currentChatUser.id
+                      message.senderId === currentChatUser.id
                         ? "bg-incoming-background"
                         : "bg-outgoing-background"
                     }`}
@@ -37,7 +39,7 @@ function ChatContainer() {
                         {calculateTime(message.createdAt)}
                       </span>
                       <span>
-                        {message.senderId !== userInfo.id && (
+                        {message.senderId === userInfo.id && (
                           <MessageStatus
                             messageStatus={message.messageStatus}
                           />
@@ -46,6 +48,7 @@ function ChatContainer() {
                     </div>
                   </div>
                 )}
+                {message.type === "image" && <ImageMessage message={message} />}
               </div>
             ))}
           </div>

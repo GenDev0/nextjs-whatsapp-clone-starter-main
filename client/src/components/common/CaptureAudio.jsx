@@ -1,7 +1,136 @@
-import React from "react";
+import { useStateProvider } from "@/context/StateContext";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  FaMicrophone,
+  FaPauseCircle,
+  FaPlay,
+  FaStop,
+  FaTrash,
+} from "react-icons/fa";
+import { MdSend } from "react-icons/md";
+import WaveSurfer from "wavesurfer.js";
 
-function CaptureAudio() {
-  return <div>CaptureAudio</div>;
+function CaptureAudio({ hide }) {
+  const [{ userInfo, currentChatUser, socket }, dispatch] = useStateProvider();
+
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordedAudio, setRecordedAudio] = useState(null);
+  const [waveForm, setWaveForm] = useState(null);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const [currentPlaybackTime, setCurrentPlaybackTime] = useState(0);
+  const [totalDuration, setTotalDuration] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  const audioRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const waveFormRef = useRef(null);
+
+  useEffect(() => {
+    const waveSurfer = WaveSurfer.create({
+      container: waveFormRef.current,
+      waveColor: "ccc",
+      progressColor: "#4e9eff",
+      cursorColor: "7ae3c3",
+      barWidth: 2,
+      height: 30,
+      responsive: true,
+    });
+    setWaveForm(waveSurfer);
+    waveSurfer.on("finish", () => {
+      setIsPlaying(false);
+    });
+    return () => {
+      waveSurfer.destroy();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (waveForm) {
+      handleStartRecording();
+    }
+  }, [waveForm]);
+
+  const formatTime = (time) => {
+    if (isNaN(time)) {
+      return "00:00";
+    }
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes.toString().padStart(2, "0")}:${seconds
+      .toString()
+      .padStart(2, "0")}`;
+  };
+
+  const handleStartRecording = () => {};
+
+  const handleStopRecording = () => {};
+
+  const handlePlayRecording = () => {};
+
+  const handlePauseRecording = () => {};
+
+  const sendRecording = async () => {};
+
+  return (
+    <div className='flex text-2xl w-full justify-end items-center px-2'>
+      <div className='pt-1'>
+        <FaTrash
+          className='text-panel-header-icon -ml-2 mr-2'
+          onClick={() => hide()}
+        />
+      </div>
+      <div className='md:mx-4 py-2  md:px-4 text-white md:text-lg flex md:gap-3 justify-center items-center bg-search-input-container-background rounded-full drop-shadow-lg'>
+        {isRecording ? (
+          <div className='text-red-500 animate-pulse w-60 text-center'>
+            Recording...
+            <span>{recordingDuration}s</span>
+          </div>
+        ) : (
+          <div className=''>
+            {recordedAudio && (
+              <>
+                {!isPlaying ? (
+                  <FaPlay onClick={handlePlayRecording} />
+                ) : (
+                  <FaStop onClick={handleStopRecording} />
+                )}
+              </>
+            )}
+          </div>
+        )}
+        <div className='w-60' ref={waveFormRef} hidden={isRecording} />
+        {recordedAudio && isPlaying && (
+          <span>{formatTime(currentPlaybackTime)}</span>
+        )}
+        {recordedAudio && !isPlaying && (
+          <span>{formatTime(totalDuration)}</span>
+        )}
+        <audio ref={audioRef} hidden />
+        <div className='relative flex justify-around items-center space-x-1'>
+          <div className=''>
+            {!isRecording ? (
+              <FaMicrophone
+                className='text-red-500'
+                onClick={handleStartRecording}
+              />
+            ) : (
+              <FaPauseCircle
+                className='text-red-500'
+                onClick={handlePauseRecording}
+              />
+            )}
+          </div>
+          <div className=''>
+            <MdSend
+              className='text-panel-header-icon cursor-pointer mr-4'
+              title='send'
+              onClick={sendRecording}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default CaptureAudio;
