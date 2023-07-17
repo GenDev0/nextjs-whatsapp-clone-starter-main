@@ -9,7 +9,12 @@ import { FaMicrophone } from "react-icons/fa";
 import { ImAttachment } from "react-icons/im";
 import { MdSend } from "react-icons/md";
 import PhotoPicker from "../common/PhotoPicker";
-import CaptureAudio from "../common/CaptureAudio";
+
+import dynamic from "next/dynamic";
+
+const CaptureAudio = dynamic(() => import("../common/CaptureAudio"), {
+  ssr: false,
+});
 
 function MessageBar() {
   const [{ userInfo, currentChatUser, socket }, dispatch] = useStateProvider();
@@ -68,6 +73,7 @@ function MessageBar() {
   useEffect(() => {
     const handleOutSideClick = (event) => {
       if (event.target.id !== "emoji-open") {
+        console.log(event.target);
         if (emojiPickerRef || !emojiPickerRef.current.contains(event.target)) {
           setShowEmojiPicker(false);
         }
@@ -75,6 +81,7 @@ function MessageBar() {
     };
     document.addEventListener("click", handleOutSideClick);
     return () => {
+      console.log("1111");
       document.removeEventListener("click", handleOutSideClick);
     };
   }, []);
@@ -127,8 +134,13 @@ function MessageBar() {
               <div
                 className='absolute bottom-24 md:left-16 -left-0 z-40'
                 ref={emojiPickerRef}
+                id='emoji-open'
               >
-                <EmojiPicker onEmojiClick={handleEmojiClick} theme='dark' />
+                <EmojiPicker
+                  onEmojiClick={handleEmojiClick}
+                  theme='dark'
+                  id='emoji-open'
+                />
               </div>
             )}
 

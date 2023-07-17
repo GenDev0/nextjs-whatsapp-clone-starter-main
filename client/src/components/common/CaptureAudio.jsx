@@ -1,4 +1,7 @@
 import { useStateProvider } from "@/context/StateContext";
+import { reducerCases } from "@/context/constants";
+import { ADD_AUDIO_MESSAGE_ROUTE } from "@/utils/ApiRoutes";
+import axios from "axios";
 import React, { useEffect, useRef, useState } from "react";
 import {
   FaMicrophone,
@@ -20,10 +23,27 @@ function CaptureAudio({ hide }) {
   const [currentPlaybackTime, setCurrentPlaybackTime] = useState(0);
   const [totalDuration, setTotalDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [renderedAudio, setRenderedAudio] = useState(null);
 
   const audioRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const waveFormRef = useRef(null);
+
+  useEffect(() => {
+    let interval;
+    if (isRecording) {
+      interval = setInterval(() => {
+        setRecordingDuration((prevDuration) => {
+          setTotalDuration(prevDuration + 1);
+          return prevDuration + 1;
+        });
+      }, 1000);
+    }
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [isRecording]);
 
   useEffect(() => {
     const waveSurfer = WaveSurfer.create({
@@ -45,9 +65,7 @@ function CaptureAudio({ hide }) {
   }, []);
 
   useEffect(() => {
-    if (waveForm) {
-      handleStartRecording();
-    }
+    if (waveForm) handleStartRecording();
   }, [waveForm]);
 
   const formatTime = (time) => {
@@ -61,29 +79,130 @@ function CaptureAudio({ hide }) {
       .padStart(2, "0")}`;
   };
 
-  const handleStartRecording = () => {};
+  const handleStartRecording = () => {
+    setRecordingDuration(0);
+    setCurrentPlaybackTime(0);
+    setTotalDuration(0);
+    setIsRecording(true);
+    setRecordedAudio(null);
+    navigator.mediaDevices
+      .getUserMedia({ audio: true })
+      .then((stream) => {
+        const mediaRecorder = new MediaRecorder(stream);
+        mediaRecorderRef.current = mediaRecorder;
+        audioRef.current.srcObject = stream;
 
-  const handleStopRecording = () => {};
+        const chunks = [];
+        mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(chunks, { type: "audio/ogg; codecs=opus" });
+          const audioURL = URL.createObjectURL(blob);
+          const audio = new Audio(audioURL);
 
-  const handlePlayRecording = () => {};
+          setRecordedAudio(audio);
 
-  const handlePauseRecording = () => {};
+          waveForm.load(audioURL);
+        };
 
-  const sendRecording = async () => {};
+        mediaRecorder.start();
+      })
+      .catch((error) => {
+        console.error("Error accessing microphone :", error);
+      });
+  };
+
+  const handleStopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      waveForm.stop();
+
+      const audioChunks = [];
+      mediaRecorderRef.current.addEventListener("dataavailable", (event) => {
+        audioChunks.push(event.data);
+      });
+      mediaRecorderRef.current.addEventListener("stop", () => {
+        const audioBlob = new Blob(audioChunks, { type: "audio/mp3" });
+        const audioFile = new File([audioBlob], "recording.mp3");
+        setRenderedAudio(audioFile);
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (recordedAudio) {
+      const updatePlayBackTime = () => {
+        setCurrentPlaybackTime(recordedAudio.currentTime);
+      };
+      recordedAudio.addEventListener("timeupdate", updatePlayBackTime);
+
+      return () => {
+        recordedAudio.removeEventListener("timeupdate", updatePlayBackTime);
+      };
+    }
+  }, [recordedAudio]);
+
+  const handlePlayRecording = () => {
+    if (recordedAudio) {
+      waveForm.stop();
+      waveForm.play();
+      recordedAudio.play();
+      setIsPlaying(true);
+    }
+  };
+
+  const handlePauseRecording = () => {
+    waveForm.stop();
+
+    recordedAudio.pause();
+    setIsPlaying(false);
+  };
+
+  const sendRecording = async () => {
+    try {
+      const formData = new FormData();
+      formData.append("audio", renderedAudio);
+      const response = await axios.post(ADD_AUDIO_MESSAGE_ROUTE, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+        params: {
+          from: userInfo.id,
+          to: currentChatUser.id,
+        },
+      });
+      if (response.status === 201) {
+        socket.current.emit("send-msg", {
+          to: currentChatUser?.id,
+          from: userInfo?.id,
+          message: response.data.message,
+        });
+        dispatch({
+          type: reducerCases.ADD_MESSAGE,
+          newMessage: {
+            ...response.data.message,
+          },
+          fromSelf: true,
+        });
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   return (
-    <div className='flex text-2xl w-full justify-end items-center px-2'>
+    <div className='flex text-2xl w-full justify-start md:justify-end items-center px-1'>
       <div className='pt-1'>
         <FaTrash
           className='text-panel-header-icon -ml-2 mr-2'
           onClick={() => hide()}
         />
       </div>
-      <div className='md:mx-4 py-2  md:px-4 text-white md:text-lg flex md:gap-3 justify-center items-center bg-search-input-container-background rounded-full drop-shadow-lg'>
+      <div className='md:mx-4 py-2 md:px-4 text-white md:text-lg flex md:gap-3 justify-center items-center bg-search-input-container-background rounded-full drop-shadow-lg'>
         {isRecording ? (
-          <div className='text-red-500 animate-pulse w-60 text-center'>
+          <div className='text-red-500 animate-pulse w-60 text-start ml-2 flex'>
             Recording...
-            <span>{recordingDuration}s</span>
+            <span className='hidden md:block'>{recordingDuration}s</span>
           </div>
         ) : (
           <div className=''>
@@ -92,7 +211,7 @@ function CaptureAudio({ hide }) {
                 {!isPlaying ? (
                   <FaPlay onClick={handlePlayRecording} />
                 ) : (
-                  <FaStop onClick={handleStopRecording} />
+                  <FaStop onClick={handlePauseRecording} />
                 )}
               </>
             )}
@@ -100,33 +219,37 @@ function CaptureAudio({ hide }) {
         )}
         <div className='w-60' ref={waveFormRef} hidden={isRecording} />
         {recordedAudio && isPlaying && (
-          <span>{formatTime(currentPlaybackTime)}</span>
+          <span className='absolute right-10 -ml-24 z-20  '>
+            {formatTime(currentPlaybackTime)}
+          </span>
         )}
         {recordedAudio && !isPlaying && (
-          <span>{formatTime(totalDuration)}</span>
+          <span className='absolute right-10 -ml-24 z-20 '>
+            {formatTime(totalDuration)}
+          </span>
         )}
         <audio ref={audioRef} hidden />
-        <div className='relative flex justify-around items-center space-x-1'>
-          <div className=''>
-            {!isRecording ? (
-              <FaMicrophone
-                className='text-red-500'
-                onClick={handleStartRecording}
-              />
-            ) : (
-              <FaPauseCircle
-                className='text-red-500'
-                onClick={handlePauseRecording}
-              />
-            )}
-          </div>
-          <div className=''>
-            <MdSend
-              className='text-panel-header-icon cursor-pointer mr-4'
-              title='send'
-              onClick={sendRecording}
+      </div>
+      <div className='relative flex justify-around items-center space-x-1'>
+        <div className=''>
+          {!isRecording ? (
+            <FaMicrophone
+              className='text-red-500 -ml-8 md:mr-1 absolute md:right-14 right-10 top-0'
+              onClick={handleStartRecording}
             />
-          </div>
+          ) : (
+            <FaPauseCircle
+              className='text-red-500 -ml-8 md:mr-1 absolute md:right-14 right-10 top-0'
+              onClick={handleStopRecording}
+            />
+          )}
+        </div>
+        <div className=''>
+          <MdSend
+            className='text-panel-header-icon cursor-pointer ml-2'
+            title='send'
+            onClick={sendRecording}
+          />
         </div>
       </div>
     </div>
