@@ -67,7 +67,7 @@ function SearchMessages() {
           <div className='flex flex-col w-full h-full '>
             {searchTerm &&
               SearchMessages.map((message) => (
-                <div className='flex cursor-pointer flex-col justify-center hover:bg-background-default-hover w-full px-5 border-b-[0.1px] border-s py-5'>
+                <div className='flex cursor-pointer flex-col justify-center hover:bg-background-default-hover w-full px-5 border border-gray-500 border-s rounded-md py-4 my-1'>
                   <div className='text-sm text-secondary'>
                     {calculateTime(message.createdAt)}
                   </div>

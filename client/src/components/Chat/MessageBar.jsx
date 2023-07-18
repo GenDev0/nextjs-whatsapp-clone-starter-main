@@ -73,15 +73,18 @@ function MessageBar() {
   useEffect(() => {
     const handleOutSideClick = (event) => {
       if (event.target.id !== "emoji-open") {
-        console.log(event.target);
-        if (emojiPickerRef || !emojiPickerRef.current.contains(event.target)) {
+        if (
+          emojiPickerRef.current &&
+          !emojiPickerRef.current.contains(event.target)
+        ) {
           setShowEmojiPicker(false);
         }
       }
     };
+
     document.addEventListener("click", handleOutSideClick);
+
     return () => {
-      console.log("1111");
       document.removeEventListener("click", handleOutSideClick);
     };
   }, []);
@@ -134,13 +137,8 @@ function MessageBar() {
               <div
                 className='absolute bottom-24 md:left-16 -left-0 z-40'
                 ref={emojiPickerRef}
-                id='emoji-open'
               >
-                <EmojiPicker
-                  onEmojiClick={handleEmojiClick}
-                  theme='dark'
-                  id='emoji-open'
-                />
+                <EmojiPicker onEmojiClick={handleEmojiClick} theme='dark' />
               </div>
             )}
 
