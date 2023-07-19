@@ -8,7 +8,23 @@ import ChatLIstItem from "./ChatLIstItem";
 
 function ContactsList() {
   const [allContacts, setAllContacts] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchContacts, setSearchContacts] = useState([]);
   const [{}, dispatch] = useStateProvider();
+
+  useEffect(() => {
+    if (searchTerm.length) {
+      const filteredData = {};
+      Object.keys(allContacts).forEach((key) => {
+        filteredData[key] = allContacts[key].filter((obj) =>
+          obj.name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      });
+      setSearchContacts(filteredData);
+    } else {
+      setSearchContacts(allContacts);
+    }
+  }, [searchTerm]);
 
   useEffect(() => {
     const getContacts = async () => {
@@ -17,6 +33,7 @@ function ContactsList() {
           data: { users },
         } = await axios.get(GET_ALL_CONTACTS);
         setAllContacts(users);
+        setSearchContacts(users);
       } catch (error) {
         console.log(error);
       }
@@ -48,16 +65,20 @@ function ContactsList() {
                 type='text'
                 placeholder='Search Contacts'
                 className='bg-transparent text-sm focus:outline-none text-white w-full truncate'
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
           </div>
         </div>
         {/* map allContacts */}
-        {Object.entries(allContacts).map(([initialLetter, userList]) => (
+        {Object.entries(searchContacts).map(([initialLetter, userList]) => (
           <div key={Date.now() + initialLetter} className=''>
-            <div className='text-teal-light pl-4 py-2 md:pl-10 md:py-5'>
-              {initialLetter}
-            </div>
+            {userList.length > 0 && (
+              <div className='text-teal-light pl-4 py-2 md:pl-10 md:py-5'>
+                {initialLetter}
+              </div>
+            )}
             {userList.map((user) => (
               <ChatLIstItem key={user.id} data={user} isContactPage={true} />
             ))}

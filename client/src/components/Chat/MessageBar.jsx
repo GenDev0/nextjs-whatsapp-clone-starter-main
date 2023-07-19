@@ -26,6 +26,7 @@ function MessageBar() {
   const emojiPickerRef = useRef(null);
 
   const photoPickerChange = async (e) => {
+    console.log(e);
     try {
       const file = e.target.files[0];
       const formData = new FormData();
@@ -62,10 +63,10 @@ function MessageBar() {
     if (grabPhoto) {
       const data = document.getElementById("photo-picker");
       data.click();
-      document.body.onfocus = async (e) => {
+      document.body.onfocus = async () => {
         setTimeout(() => {
           setGrabPhoto(false);
-        }, 1000);
+        }, 100);
       };
     }
   }, [grabPhoto]);

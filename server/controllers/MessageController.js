@@ -74,8 +74,9 @@ export const addImageMessage = async (req, res, next) => {
       renameSync(req.file.path, fileName);
       const prisma = getPrismaInstance();
       const { from, to } = req.query;
+
       // TODO : Add image upload to s3 and update the file name here
-      if (from & to) {
+      if (from && to) {
         const message = await prisma.messages.create({
           data: {
             message: fileName,
@@ -86,7 +87,7 @@ export const addImageMessage = async (req, res, next) => {
         });
         return res.status(201).json({ message });
       }
-      return res.status(400).send("From,To are Required !");
+      return res.status(400).send("From,To are Required !11");
     }
     return res.status(400).send("Image is Required !");
   } catch (error) {
@@ -103,7 +104,7 @@ export const addAudioMessage = async (req, res, next) => {
       const prisma = getPrismaInstance();
       const { from, to } = req.query;
       // TODO : Add image upload to s3 and update the file name here
-      if (from & to) {
+      if (from && to) {
         const message = await prisma.messages.create({
           data: {
             message: fileName,
@@ -160,16 +161,16 @@ export const getInitialContactsWithMessages = async (req, res, next) => {
       if (msg.messageStatus === "sent") {
         messageStatusChange.push(msg.id);
       }
+      const {
+        id,
+        type,
+        message,
+        messageStatus,
+        createdAt,
+        senderId,
+        receiverId,
+      } = msg;
       if (!users.get(calculatedId)) {
-        const {
-          id,
-          type,
-          message,
-          messageStatus,
-          createdAt,
-          senderId,
-          receiverId,
-        } = msg;
         let user = {
           messageId: id,
           type,
